@@ -12,8 +12,9 @@ lazy val root = (project in file(".")).
       organization := "com.example",
       scalaVersion := "2.12.1",
       version      := "0.1.0-SNAPSHOT",
-      javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-      // For project with only Java sources. In order to compile Scala sources, remove the following two lines.
+      javacOptions ++= Seq("-source", "1.8", "-target", "1.8","-encoding","UTF-8"),
+      scalacOptions := Seq("-unchecked", "-deprecation"),
+        // For project with only Java sources. In order to compile Scala sources, remove the following two lines.
       crossPaths := false,
       autoScalaLibrary := false
     )),
