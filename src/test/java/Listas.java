@@ -208,6 +208,13 @@ public class Listas {
 
         List<Tuple2<Integer,Integer>> zip = li.zip(l2);
         System.out.println("El Zip es:" + zip);
+        //NO HAY DIFERENCIA EN VALOR DEL MÉTODO  Y LA VARIABLE
+        List<Tuple2<Integer, Integer>> zip2 = zip.map(x -> {
+            System.out.println("Variable:" + x._1);
+            System.out.println("Método:" + x._1());
+            return x;
+        });
+        System.out.println("El zip2 es: "+zip2 );
 
         assertEquals(zip.headOption().getOrElse(new Tuple2(0,0)), new Tuple2(1,1));
     }
@@ -307,11 +314,21 @@ public class Listas {
     }
 
     @Test
+    public void tesHeadVSpeek()
+    {
+        List<Integer> lista = List.of(1,2,3,4,5);
+        Integer head = lista.head();
+        Integer peek = lista.peek();
+        assertEquals(head,peek);
+    }
+
+    @Test
     public void testHeadOptionDeUnaListaVacia(){
         List<Integer> lista = List.of();
         Option<Integer> enteroOption = lista.headOption();
         int elementoOpcional = enteroOption.getOrElse(3);
         assertEquals(3,elementoOpcional);
+        assertEquals(Option.none(),enteroOption);
     }
 
     @Test
@@ -336,6 +353,7 @@ public class Listas {
         List<Tuple2<Integer, Integer>> zippedList = list1.zip(list2);
         assertEquals(zippedList.head(), Tuple.of(new Integer(1), new Integer(1)) );
         assertEquals(zippedList.tail().head(), Tuple.of(new Integer(2), new Integer(2)) );
+        assertEquals(zippedList.get(2),Tuple.of(new Integer(3),new Integer(3)));
     }
 
     /**
@@ -347,6 +365,7 @@ public class Listas {
         List<Integer> list2 = list1.map(i -> i);
         assertEquals(List.of(0,1,2),list1);
         assertNotSame(list1,list2);
+        assertEquals(list1,list2);
     }
 
     public String nameOfNumer(int i){
@@ -375,6 +394,7 @@ public class Listas {
         List<Integer> list = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         List<Integer> filteredList = list.filter(i -> i % 2 == 0);
         assertTrue(filteredList.get(0)==2);
+        assertEquals(List.of(2,4,6,8,10),filteredList);
 
     }
 
@@ -400,6 +420,7 @@ public class Listas {
         List<Tuple2<String, String>> expected2 = List.of(Tuple.of("I", "deleted"), Tuple.of("Mario's", "test"),
                 Tuple.of("Please", "forgive"), Tuple.of("me", "!"));
         assertEquals(expected2,zipped2);
+        assertNotSame(expected2,zipped2);
     }
 
     /**
@@ -440,6 +461,13 @@ public class Listas {
         List<Integer> l1 = List.of();
         Option<List<Integer>> l2 = l1.popOption();
         assertEquals(l2, Option.none());
+    }
+
+    @Test
+    public void testPop2Pop3(){
+        List<Integer> l2 = List.of(1,2,3,4,5,6);
+        Tuple2<Integer, List<Integer>> integerListTuple2 = l2.pop2();
+        assertEquals(Tuple.of(new Integer(1),List.of(2,3,4,5,6)),integerListTuple2);
     }
 
     @Test
@@ -577,4 +605,5 @@ public class Listas {
                 List.of("window","!","Second"),
                 windows2.get(1));
     }
+
 }
