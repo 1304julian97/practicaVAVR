@@ -1,5 +1,7 @@
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.collection.Array;
+import io.vavr.collection.Iterator;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.control.Option;
@@ -150,6 +152,55 @@ public class Listas {
         assertNotEquals(Option.none(),map.get(null));
     }
 
+    //Agrupa en la lista en n número de elementos
+    @Test
+    public void testGrouped()
+    {
+        List<Integer> lista = List.of(1,2,3,4);
+        Iterator<List<Integer>> grouped = lista.grouped(3);
+        //System.out.println(grouped.get());
+        List<List<Integer>> lists = grouped.toList();
+        assertEquals(List.of(1,2,3),lists.get(0));
+        assertEquals(List.of(4),lists.get(1));
+    }
+
+    @Test
+    public void testGrouped2()
+    {
+        List<Integer> lista = List.of(1,2,3,4);
+        Iterator<List<Integer>> grouped = lista.grouped(5);
+        List<List<Integer>> lists = grouped.toList();
+        assertEquals(1,lists.size());
+        assertEquals(List.of(1,2,3,4),lists.get(0));
+    }
+
+    @Test
+    public void testGroupedToOption()
+    {
+        List<Integer> lista = List.of(1,2,3,4);
+        Iterator<List<Integer>> grouped = lista.grouped(1);
+        //Coge solo el primero
+        Option<List<Integer>> lists = grouped.toOption();
+        //Coge todos menos el primero
+        Array<List<Integer>> lists1 = grouped.toArray();
+        System.out.println("Option: "+lists);
+        System.out.println("Array"+lists1);
+        System.out.println(lists1.size());
+
+    }
+
+    //El toString de groupedNoArrojaError de compilacion pero a la hora de la ejecución arroja datos incorrectos
+    @Test
+    public void testGroupedString()
+    {
+        List<String> list = List.of("Julian","Carvajal","Montoya");
+        Iterator<List<String>> grouped = list.grouped(2);
+        String s = grouped.toString();
+        System.out.println(s);
+        String substring = s.substring(3);
+        assertEquals("Iterator(?)",s);
+    }
+
     @Test
     public void testingZip(){
         List<Integer> li = List.of(1,2,3,4);
@@ -160,6 +211,71 @@ public class Listas {
 
         assertEquals(zip.headOption().getOrElse(new Tuple2(0,0)), new Tuple2(1,1));
     }
+
+    @Test
+    public void testHasDefiniteSize()
+    {
+        List<Integer> list = List.of(1,2,3,4,5);
+        boolean b = list.hasDefiniteSize(); //Siempre Retorna True
+        assertTrue(b);
+    }
+
+    @Test
+    public void testIndexOf()
+    {
+        List<Integer> list = List.of(1,2,3,4,5);
+        int i = list.indexOf(1, 0);
+        int i1 = list.indexOf(1, 1);
+        System.out.println(i1);
+        assertEquals(-1,i1);
+        assertEquals(0,i);
+    }
+
+    class Persona{
+        int edad;
+        int anio;
+
+        public Persona(int edad,int anio)
+        {
+            this.edad = edad;
+            this.anio = anio;
+        }
+
+
+        public  boolean equals(Persona p)
+        {
+            return this.edad == p.edad && this.anio == p.anio;
+        }
+    }
+
+    @Test
+    public void testIndexOfObjeto()
+    {
+        Persona persona = new Persona(21, 1997);
+        List<Persona> list = List.of(new Persona(1,2018),persona, new Persona(27,1991));
+        int i = list.indexOf(persona,0);
+        assertEquals(1,i);
+        System.out.println(persona.equals(new Persona(21,1997)));
+
+    }
+
+    //Los siguientes dos metodos tienen la opción de Until y while
+    @Test
+    public void testTake()
+    {
+        List<Integer> list = List.of(1,2,3,4,5);
+        List<Integer>list1 = list.take(2);
+        assertEquals(List.of(1,2),list1);
+    }
+
+    @Test
+    public void testTakeRight()
+    {
+        List<Integer> list = List.of(1,2,3,4,5);
+        List<Integer> list1 = list.takeRight(2);
+        assertEquals(List.of(4,5),list1);
+    }
+
 
 
     @Test
