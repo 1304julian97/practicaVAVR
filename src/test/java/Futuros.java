@@ -16,6 +16,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -128,6 +129,7 @@ public class Futuros {
         assertEquals(f,futureSplit);
     }
 
+    //OnComplete con estado del futuro en failure
     @Test
     public void testOnCompleteFailure() {
         Future<String[]> futureSplit = Future.of(() -> {
@@ -141,7 +143,7 @@ public class Futuros {
                 }
             }
 
-            Try.of(()->{sleep(1000);return 1;});
+            //Try.of(()->{sleep(1000);return 1;});
 
             imprimirMensajeConFechaActual("Hilo Futuro: "+Thread.currentThread().getName());
 
@@ -162,10 +164,10 @@ public class Futuros {
         Future<String> f2 = Future.of(()->"2");
         Future<String> f3 = Future.of(()->"3");
 
-        Future<String> f4 = Future.fold(List.of(f1,f2,f3),"",(x, y)->x+y);
+        Future<String> f4 = Future.fold(List.of(f1,f2,f3),"w",(x, y)->x+y);
 
         Future<String> await = f4.await();
-        assertEquals(await.get(),"123");
+        assertEquals(await.get(),"w123");
 
     }
 
@@ -184,12 +186,46 @@ public class Futuros {
         assertEquals(await.get(),"123");
     }
 
-    /*public Future<String> myFold(List<Future<String>> myList, String zero, BiFunction<String,String,String> bp){
-        Future<String> stringInicial = Future.of(()->bp.apply(zero,myList.get(0).get()));
-        List<Future<String>> lista2 = myList.tail();
-        lista2.flatMap(l->);
-        return Future.of(()->"");
-    }*/
+    @Test
+    public void foldEqualsFlatMap2(){
+        Future<String> f1 = Future.of(()->{imprimirMensajeConFechaActual("f1 "+Thread.currentThread().getName());return "1";});
+        Future<String> f2 = Future.of(()->{imprimirMensajeConFechaActual("f2 "+Thread.currentThread().getName());return "2";});
+        Future<String> f3 = Future.of(()->{imprimirMensajeConFechaActual("f3 "+Thread.currentThread().getName());return "3";});
+
+        imprimirMensajeConFechaActual("principal: "+Thread.currentThread().getName());
+        Future<String> f4 = Future.fold(List.of(f1,f2,f3),"",(x,y)->x+y);
+
+        Future<String> f5 = f1.flatMap(sf1->f2.flatMap(sf2->Future.of(()->sf1+sf2))).
+                flatMap(sfr->f3.flatMap(sf3->Future.of(()->sfr+sf3)));
+        assertEquals(f4.get(),f5.get());
+    }
+
+
+    public Future<String> myFold(List<Future<String>> myList, String zero, BiFunction<String,String,String> bp){
+        String[] acumulador = {""};
+        List<Future<String>> myList2 = myList.prepend(Future.of(()->zero));
+        List<String> map = myList2.map(actualFuturoString -> {
+            acumulador[0] = bp.apply(actualFuturoString.get(), acumulador[0]);
+            return acumulador[0];
+        });
+        Future<String> of = Future.of(() -> map.takeRight(1).get());
+        return of;
+    }
+
+
+    @Test
+    public void myFold()
+    {
+        Future<String> f1 = Future.of(()->"1");
+        Future<String> f2 = Future.of(()->"2");
+        Future<String> f3 = Future.of(()->"3");
+        BiFunction<String,String,String> biFunction = (actual,acumulador)-> acumulador+actual;
+        Future<String> strings = myFold(List.of(f1, f2, f3), "", biFunction);
+        String s = strings.get();
+        assertEquals("123",s);
+
+    }
+
     @Test
     public void foldFeatureFailure(){
         Future<String> f1 = Future.of(()->"1");
@@ -200,6 +236,29 @@ public class Futuros {
         f4.await();
         assertTrue(f4.isFailure());
         assertEquals(f4.await().getOrElse("123"),"123");
+
+    }
+
+    //revisar
+    @Test
+    public void futuroAndThen() {
+        Future<String> f1 = Future.of(()->"Julian");
+        Future<String> f2 = Future.of(()->"Carvajal");
+        Future<String> f3 = Future.of(()->"Montoya");
+
+        Future<String> fResult = f3.andThen(x-> {
+            System.out.println(x.get());
+            System.out.println(Thread.currentThread().getName());
+            imprimirMensajeConFechaActual("andThen2"+Thread.currentThread().getName());
+        }).andThen(y->{
+            System.out.println("y:"+y.get());
+            System.out.println(Thread.currentThread().getName());
+            f2.andThen(x->{
+                System.out.println("f2: "+x.get());
+                System.out.println("thread f2 "+Thread.currentThread().getName());
+            });
+            imprimirMensajeConFechaActual("andThen2"+Thread.currentThread().getName());
+        });
 
     }
 
@@ -214,6 +273,19 @@ public class Futuros {
 
         Future<Option<Integer>> futureSome = Future.find(myLista, v -> v < 10);
         Future<Option<Integer>> futureSomeM = Future.find(myLista, v -> v > 31);
+        Future<Option<Integer>> futureNone = Future.find(myLista, v -> v > 40);
+        assertEquals( Some(9), futureSome.get());
+        assertEquals(Some(32), futureSomeM.get());
+        assertEquals( None(), futureNone.get());
+    }
+
+    @Test
+    public void testFutureToFind2() {
+        List<Future<Integer>> myLista = List.of( Future.of(() -> 5+4), Future.of(() -> 6+9), Future.of(() -> 31+1),
+                Future.of(() -> 20+9));
+
+        Future<Option<Integer>> futureSome = Future.find(myLista, v -> v < 10);
+        Future<Option<Integer>> futureSomeM = Future.find(myLista, v -> v > 20);
         Future<Option<Integer>> futureNone = Future.find(myLista, v -> v > 40);
         assertEquals( Some(9), futureSome.get());
         assertEquals(Some(32), futureSomeM.get());
